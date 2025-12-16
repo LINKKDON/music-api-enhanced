@@ -252,7 +252,8 @@ async function consturctServer(moduleDefs) {
           if (
             song.freeTrialInfo !== null ||
             !song.url ||
-            [1, 4].includes(song.fee)
+            // [1, 4].includes(song.fee)
+            (!song.url && [1, 4].includes(song.fee))
           ) {
             const match = require('@unblockneteasemusic/server')
             const source = process.env.UNBLOCK_SOURCE
