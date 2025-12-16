@@ -95,14 +95,26 @@ module.exports = async (query, request) => {
     const data = await apiRes.json()
 
     if (data.code === 1 && data.data && data.data.url) {
+        const url = data.data.url
+        let type = 'mp3'
+        if (url.includes('.flac')) type = 'flac'
+        
+        let br = 128000
+        // 尝试从 url 参数推断码率，例如 bitrate$128 -> 128000
+        const brMatch = url.match(/bitrate\$(\d+)/)
+        if (brMatch) {
+            br = parseInt(brMatch[1]) * 1000
+        }
+
         return {
             status: 200,
             body: {
                 code: 200,
                 message: '请求成功',
                 data: {
-                    url: data.data.url,
-                    type: 'mp3',
+                    url: url,
+                    type: type,
+                    br: br,
                     source: 'gequbao'
                 }
             }
