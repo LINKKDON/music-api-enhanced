@@ -4,19 +4,43 @@
 const { randomBytes } = require('crypto')
 
 module.exports = async (query, request) => {
-  const keyword = query.keywords || query.name
-  if (!keyword) {
-    return {
-      status: 400,
-      body: {
-        code: 400,
-        message: '缺少搜索关键词 keywords',
-        data: [],
-      },
-    }
-  }
-
   try {
+    let keyword = query.keywords || query.name
+    
+    // 如果没有关键词但有ID，先获取歌曲详情
+    if (!keyword && query.id) {
+        const songDetail = await request(
+            '/api/v3/song/detail',
+            {
+                c: JSON.stringify([{ id: query.id }]),
+                ids: '[' + query.id + ']',
+            },
+            {
+                crypto: 'eapi',
+                cookie: query.cookie,
+                proxy: query.proxy,
+                realIP: query.realIP,
+                url: '/api/v3/song/detail'
+            }
+        )
+        if (songDetail.body && songDetail.body.songs && songDetail.body.songs[0]) {
+            const song = songDetail.body.songs[0]
+            const artists = song.ar ? song.ar.map(a => a.name).join(' ') : ''
+            keyword = `${song.name} ${artists}`.trim()
+        }
+    }
+
+    if (!keyword) {
+      return {
+        status: 400,
+        body: {
+          code: 400,
+          message: '缺少搜索关键词 keywords 或 id',
+          data: [],
+        },
+      }
+    }
+
     // 1. 搜索获取 ID
     const searchUrl = `https://www.gequbao.com/s/${encodeURIComponent(keyword)}`
     const searchRes = await fetch(searchUrl)
